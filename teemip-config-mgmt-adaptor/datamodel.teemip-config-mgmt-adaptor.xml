@@ -1,0 +1,693 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<itop_design xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" version="1.7">
+  <classes>
+    <class id="FunctionalCI" _delta="must_exist">
+      <methods>
+        <method id="GetNameForIPAttribute" _delta="define">
+          <comment>/**
+            * Compute name of given IP Attribute
+            */</comment>
+          <static>false</static>
+          <access>public</access>
+          <type>Custom</type>
+          <code><![CDATA[	public function GetNameForIPAttribute($sIPAttCode)
+	{
+		// Append IP label to name beside default IP attributes
+		switch ($sIPAttCode)
+		{
+		    case 'managementip_id':
+		    case 'ipaddress_id':
+		        $sName = $this->Get('name');
+		        break;
+
+		    default:
+        		$sName = $this->Get('name').'-'.$this->GetLabel($sIPAttCode);
+		}
+		// Replace space char in name by '-' and lower the case
+		$sName = strtolower(str_replace(' ', '-', $sName));
+
+		return $sName;
+
+	}]]></code>
+        </method>
+      </methods>
+    </class>
+    <class id="PhysicalDevice" _delta="must_exist">
+      <methods>
+        <method id="GetAttributeParams" _delta="define">
+          <comment>/**&#13;
+            * Provides attributes' parameters &#13;
+            */</comment>
+          <static>false</static>
+          <access>public</access>
+          <type>Overload-DBObject</type>
+          <code><![CDATA[	public function GetAttributeParams($sAttCode)
+    {
+        if ($sAttCode == 'macaddress')
+	    {
+			$iOrgId = $this->Get('org_id');
+			if ($iOrgId != null)
+			{
+				return(IPConfig::GetFromGlobalIPConfig('mac_address_format', $iOrgId));
+			}
+			return('colons');
+	    }
+	    return '';
+	}]]></code>
+        </method>
+      </methods>
+    </class>
+    <class id="DatacenterDevice" _delta="must_exist">
+      <fields>
+        <field id="managementip" xsi:type="AttributeIPAddress" _delta="delete"/>
+        <field id="managementip_id" xsi:type="AttributeExternalKey" _delta="define">
+          <filter><![CDATA[SELECT IPAddress AS ip WHERE ip.status NOT IN ('allocated', 'reserved') AND ip.org_id = :this->org_id]]></filter>
+          <dependencies>
+            <attribute id="org_id"/>
+         </dependencies>
+          <sql>managementip_id</sql>
+          <is_null_allowed>true</is_null_allowed>
+          <target_class>IPAddress</target_class>
+          <on_target_delete>DEL_MANUAL</on_target_delete>
+        </field>
+        <field id="managementip_name" xsi:type="AttributeExternalField" _delta="define">
+          <extkey_attcode>managementip_id</extkey_attcode>
+          <target_attcode>fqdn</target_attcode>
+        </field>
+      </fields>
+      <presentation>
+        <default_search _delta="must_exist">
+          <items>
+            <item id="managementip"  _delta="delete"/>
+            <item id="managementip_id"  _delta="define">
+              <rank>20</rank>
+            </item>
+          </items>
+        </default_search>
+      </presentation>
+    </class>
+    <class id="NetworkDevice" _delta="must_exist">
+      <presentation>
+        <details>
+          <items>
+            <item id="col:col1" _delta="must_exist">
+              <rank>80</rank>
+              <items>
+                <item id="fieldset:Server:moreinfo" _delta="must_exist">
+                  <rank>20</rank>
+                  <items>
+                    <item id="managementip" _delta="delete"/>
+                    <item id="managementip_id" _delta="define">
+                      <rank>45</rank>
+                    </item>
+                  </items>
+                </item>
+              </items>
+            </item>
+          </items>
+        </details>
+        <search>
+          <items>
+            <item id="managementip" _delta="delete"/>
+            <item id="managementip_id" _delta="define">
+              <rank>55</rank>
+            </item>
+          </items>
+        </search>
+      </presentation>
+    </class>
+    <class id="Server" _delta="must_exist">
+      <presentation>
+        <details>
+          <items>
+            <item id="col:col1">
+              <rank>120</rank>
+              <items>
+                <item id="fieldset:Server:moreinfo">
+                  <rank>20</rank>
+                  <items>
+                    <item id="managementip" _delta="delete"/>
+                    <item id="managementip_id" _delta="define">
+                      <rank>45</rank>
+                    </item>
+                  </items>
+                </item>
+              </items>
+            </item>
+          </items>
+        </details>
+        <search>
+          <items>
+            <item id="managementip" _delta="delete"/>
+            <item id="managementip_id" _delta="define">
+              <rank>55</rank>
+            </item>
+          </items>
+        </search>
+      </presentation>
+    </class>
+    <class id="Subnet" _delta="delete"/>
+    <class id="VLAN" _delta="must_exist">
+      <fields>
+        <field id="subnets_list" xsi:type="AttributeLinkedSetIndirect" _delta="redefine">
+          <linked_class>lnkIPSubnetToVLAN</linked_class>
+          <ext_key_to_me>vlan_id</ext_key_to_me>
+          <count_min>0</count_min>
+          <count_max>0</count_max>
+          <ext_key_to_remote>ipsubnet_id</ext_key_to_remote>
+          <duplicates/>
+        </field>
+      </fields>
+    </class>
+    <class id="lnkSubnetToVLAN" _delta="delete"/>
+    <class id="NetworkInterface" _created_in="itop-config-mgmt" _delta="must_exist">
+      <properties>
+        <obsolescence _delta="define_if_not_exists">
+          <condition>operational_status = 'inactive'</condition>
+        </obsolescence>
+      </properties>
+      <fields>
+        <field id="operational_status" xsi:type="AttributeMetaEnum" _delta="define">
+          <values>
+            <value id="active">active</value>
+            <value id="inactive">inactive</value>
+          </values>
+          <sql>operational_status</sql>
+          <default_value>active</default_value>
+          <mappings>
+            <mapping id="PhysicalInterface">
+              <attcode>status</attcode>
+              <metavalues>
+                <metavalue id="active">
+                  <values>
+                    <value id="active"/>
+                  </values>
+                </metavalue>
+                <metavalue id="inactive">
+                  <values>
+                    <value id="stock"/>
+                    <value id="inactive"/>
+                    <value id="obsolete"/>
+                  </values>
+                </metavalue>
+              </metavalues>
+            </mapping>
+            <mapping id="NetworkdeviceVirtualInterface">
+              <attcode>status</attcode>
+              <metavalues>
+                <metavalue id="active">
+                  <values>
+                    <value id="active"/>
+                  </values>
+                </metavalue>
+                <metavalue id="inactive">
+                  <values>
+                    <value id="inactive"/>
+                  </values>
+                </metavalue>
+              </metavalues>
+            </mapping>
+          </mappings>
+        </field>
+      </fields>
+      <presentation>
+        <details _delta="redefine">
+          <items>
+            <item id="name">
+              <rank>10</rank>
+            </item>
+            <item id="operational_status">
+              <rank>20</rank>
+            </item>
+          </items>
+        </details>
+        <default_search _delta="redefine">
+          <items>
+            <item id="name">
+              <rank>10</rank>
+            </item>
+            <item id="operational_status">
+              <rank>20</rank>
+            </item>
+          </items>
+        </default_search>
+        <search _delta="redefine">
+          <items>
+            <item id="name">
+              <rank>10</rank>
+            </item>
+            <item id="operational_status">
+              <rank>20</rank>
+            </item>
+          </items>
+        </search>
+        <list _delta="redefine">
+          <items>
+            <item id="name">
+              <rank>10</rank>
+            </item>
+            <item id="operational_status">
+              <rank>20</rank>
+            </item>
+          </items>
+        </list>
+      </presentation>
+    </class>
+    <class id="IPInterface" _delta="must_exist">
+      <fields>
+        <field id="ipaddress" xsi:type="AttributeIPAddress" _delta="delete"/>
+        <field id="ip_list" xsi:type="AttributeLinkedSetIndirect" _delta="define">
+          <linked_class>lnkIPInterfaceToIPAddress</linked_class>
+          <ext_key_to_me>ipinterface_id</ext_key_to_me>
+          <count_min>0</count_min>
+          <count_max>0</count_max>
+          <ext_key_to_remote>ipaddress_id</ext_key_to_remote>
+          <duplicates/>
+        </field>
+        <field id="macaddress" xsi:type="AttributeString" _delta="delete"/>
+        <field id="macaddress" xsi:type="AttributeMacAddress" _delta="define">
+          <sql>macaddress</sql>
+          <default_value/>
+          <is_null_allowed>true</is_null_allowed>
+        </field>
+        <field id="ipgateway" xsi:type="AttributeIPAddress" _delta="delete"/>
+        <field id="ipmask" xsi:type="AttributeIPAddress" _delta="delete"/>
+      </fields>
+      <methods>
+        <method id="GetAttributeParams" _delta="define">
+          <comment>/**&#13;
+	 * Provides attributes' parameters &#13;
+   */</comment>
+          <static>false</static>
+          <access>public</access>
+          <type>Overload-DBObject</type>
+          <code><![CDATA[	public function GetAttributeParams($sAttCode) {
+        if ($sAttCode == 'macaddress') {
+	        $oObject = null;
+			$sClass = get_class($this);
+			if (MetaModel::IsValidAttCode($sClass, 'connectableci_id')) {
+				$iConnectableCIId = $this->Get('connectableci_id');
+				$oObject = MetaModel::GetObject('ConnectableCI', $iConnectableCIId, false /* MustBeFound */);
+			} elseif (MetaModel::IsValidAttCode($sClass, 'virtualmachine_id')) {
+				$iVirtualMachineId = $this->Get('virtualmachine_id');
+				$oObject = MetaModel::GetObject('VirtualMachine', $iVirtualMachineId, false /* MustBeFound */);
+			}
+			if ($oObject != null) {
+				$iOrgId = $oObject->Get('org_id');
+				if ($iOrgId != null) {
+					return(IPConfig::GetFromGlobalIPConfig('mac_address_format', $iOrgId));
+				}
+			}
+			return('colons');
+	    }
+	    return '';
+	}]]></code>
+        </method>
+      </methods>
+      <presentation>
+        <details>
+          <items>
+		  	<item id="ip_list">
+			  <rank>5</rank>
+			</item>
+            <item id="ipaddress" _delta="delete"/>
+            <item id="ipgateway" _delta="delete"/>
+            <item id="ipmask" _delta="delete"/>
+          </items>
+        </details>
+        <search>
+          <items>
+            <item id="ipaddress" _delta="delete"/>
+            <item id="ipgateway" _delta="delete"/>
+            <item id="ipmask" _delta="delete"/>
+          </items>
+        </search>
+        <default_search>
+          <items>
+            <item id="ipaddress" _delta="delete"/>
+          </items>
+        </default_search>
+        <list>
+          <items>
+            <item id="ipaddress" _delta="delete"/>
+            <item id="ipgateway" _delta="delete"/>
+            <item id="ipmask" _delta="delete"/>
+          </items>
+        </list>
+      </presentation>
+    </class>
+    <class id="PhysicalInterface" _delta="must_exist">
+      <fields>
+        <field id="status" xsi:type="AttributeEnum" _delta="define">
+          <values>
+            <value id="stock">stock</value>
+            <value id="active">active</value>
+            <value id="inactive">inactive</value>
+            <value id="obsolete">obsolete</value>
+          </values>
+          <sql>status</sql>
+          <default_value>active</default_value>
+          <is_null_allowed>true</is_null_allowed>
+          <display_style>radio_horizontal</display_style>
+        </field>
+        <field id="vrfs_list" xsi:type="AttributeLinkedSetIndirect" _delta="define">
+          <linked_class>lnkPhysicalInterfaceToVRF</linked_class>
+          <ext_key_to_me>physicalinterface_id</ext_key_to_me>
+          <count_min>0</count_min>
+          <count_max>0</count_max>
+          <ext_key_to_remote>vrf_id</ext_key_to_remote>
+          <duplicates/>
+        </field>
+      </fields>
+      <presentation>
+        <details _delta="redefine">
+          <items>
+            <item id="vlans_list">
+              <rank>10</rank>
+            </item>
+            <item id="vrfs_list">
+              <rank>20</rank>
+            </item>
+            <item id="ip_list">
+              <rank>30</rank>
+            </item>
+            <item id="col:col1">
+              <rank>40</rank>
+              <items>
+                <item id="fieldset:Class:NetworkInterface:baseinfo">
+                  <rank>10</rank>
+                  <items>
+                    <item id="name">
+                      <rank>10</rank>
+                    </item>
+                    <item id="status">
+                      <rank>20</rank>
+                    </item>
+                    <item id="connectableci_id">
+                      <rank>30</rank>
+                    </item>
+                    <item id="comment">
+                      <rank>40</rank>
+                    </item>
+                  </items>
+                </item>
+              </items>
+            </item>
+            <item id="col:col2">
+              <rank>50</rank>
+              <items>
+                <item id="fieldset:Class:NetworkInterface:moreinfo">
+                  <rank>10</rank>
+                  <items>
+                    <item id="macaddress">
+                      <rank>10</rank>
+                    </item>
+                    <item id="speed">
+                      <rank>20</rank>
+                    </item>
+                  </items>
+                </item>
+              </items>
+            </item>
+          </items>
+        </details>
+        <search>
+          <items>
+            <item id="ipaddress" _delta="delete"/>
+            <item id="ipgateway" _delta="delete"/>
+            <item id="ipmask" _delta="delete"/>
+          </items>
+        </search>
+        <default_search _delta="define">
+          <items>
+            <item id="name">
+              <rank>10</rank>
+            </item>
+            <item id="status">
+              <rank>20</rank>
+            </item>
+            <item id="macaddress">
+              <rank>30</rank>
+            </item>
+            <item id="connectableci_id">
+              <rank>40</rank>
+            </item>
+          </items>
+        </default_search>
+        <list>
+          <items>
+            <item id="status" _delta="define">
+              <rank>5</rank>
+            </item>
+            <item id="ipaddress" _delta="delete"/>
+            <item id="ipgateway" _delta="delete"/>
+            <item id="ipmask" _delta="delete"/>
+          </items>
+        </list>
+      </presentation>
+    </class>
+  </classes>
+  <menus>
+    <menu id="ConfigManagementOverview" xsi:type="DashboardMenuNode" _delta="must_exist">
+      <definition>
+        <cells>
+          <cell id="4">
+            <dashlets>
+              <dashlet id="16" xsi:type="DashletBadge" _delta="delete"/>
+              <dashlet id="17" xsi:type="DashletBadge" _delta="delete"/>
+              <dashlet id="vlan" xsi:type="DashletBadge" _delta="delete"/>
+		    </dashlets>
+          </cell>
+        </cells>
+      </definition>
+    </menu>
+  </menus>
+  <snippets>
+    <snippet id="TeemIpConfigMgmtAdaptor" _delta="define">
+      <placement>module</placement>
+      <module>teemip-config-mgmt-adaptor</module>
+      <rank>10</rank>
+      <content><![CDATA[
+/*************************************************************************************************************************
+ * Plugin to handle DisplayBare methods on non TeemIp classes and impacts on IPs when a CI is created, changed or deleted
+ */
+class TeemIpConfigMgmtAdaptor implements iApplicationUIExtension, iApplicationObjectExtension {
+	/**
+	 * @inheritdoc
+	 */
+	public function OnDisplayProperties($oObject, WebPage $oPage, $bEditMode = false) {
+	}
+
+	/**
+	 * @inheritdoc
+	 */
+	public function OnDisplayRelations($oObject, WebPage $oPage, $bEditMode = false) {
+		if ($oObject instanceof ConnectableCI) {
+	        if (!$bEditMode) {
+	            $sOQL = "SELECT lnkIPInterfaceToIPAddress AS l JOIN PhysicalInterface AS int ON l.ipinterface_id = int.id JOIN ConnectableCI AS c ON int.connectableci_id = c.id WHERE c.id = :ci_id";
+	            $sDisplayClass = 'ConnectableCI';
+	            if($oObject->Get('finalclass') == 'NetworkDevice') {
+	                $sOQL .= " UNION SELECT lnkIPInterfaceToIPAddress AS l1 JOIN NetworkDeviceVirtualInterface AS int ON l1.ipinterface_id = int.id JOIN NetworkDevice AS n ON int.networkdevice_id = n.id WHERE n.id = :ci_id";
+	                $sDisplayClass = 'NetworkDevice';
+	            }
+	            $oLnkSet =  new CMDBObjectSet(DBObjectSearch::FromOQL($sOQL), array(), array('ci_id' => $oObject->GetKey()));
+	            if ($oLnkSet->CountExceeds(0)) {
+	                $iIPs = $oLnkSet->Count();
+	                $oPage->SetCurrentTab(Dict::S('Class:'.$sDisplayClass.'/Tab:ipaddresses_list').' ('.$iIPs.')');
+	                $oPage->p(MetaModel::GetClassIcon('IPAddress').'&nbsp;'.Dict::S('Class:'.$sDisplayClass.'/Tab:ipaddresses_list+'));
+	                $oBlock = new DisplayBlock($oLnkSet->GetFilter(), 'list', false);
+	                $oBlock->Display($oPage, 'ipint_to_ipadd', array('menu' => false, 'view_link' => false));
+	            } else {
+	                $oPage->SetCurrentTab(Dict::S('Class:'.$sDisplayClass.'/Tab:ipaddresses_list'));
+	                $oPage->p(MetaModel::GetClassIcon('IPAddress').'&nbsp;'.Dict::S('UI:NoObjectToDisplay'));
+	            }
+	        }
+	    } elseif ($oObject instanceof VLAN) {
+	        if (!$bEditMode) {
+	            $iVLANId = $oObject->GetKey();
+
+		        $sOQL = "SELECT lnkIPInterfaceToIPAddress AS l1 JOIN IPInterface AS int ON l1.ipinterface_id = int.id JOIN lnkPhysicalInterfaceToVLAN AS l2 ON l2.physicalinterface_id = int.id JOIN VLAN AS v ON l2.vlan_id = v.id WHERE v.id = :vlan_id";
+	            if(class_exists('LogicalInterface')) {
+		            $sOQL .= " UNION SELECT lnkIPInterfaceToIPAddress AS l1 JOIN IPInterface AS int ON l1.ipinterface_id = int.id JOIN lnkLogicalInterfaceToVLAN AS l2 ON l2.logicalinterface_id = int.id JOIN VLAN AS v ON l2.vlan_id = v.id WHERE v.id = :vlan_id";
+	            }
+		        $oLnkSet =  new CMDBObjectSet(DBObjectSearch::FromOQL($sOQL), array(), array('vlan_id' => $iVLANId));
+				$iLnkSet = $oLnkSet->Count();
+
+			    if ($iLnkSet > 0) {
+			        $iIPs = $oLnkSet->Count();
+			        $oPage->SetCurrentTab(Dict::S('Class:VLAN/Tab:ipaddresses_list').' ('.$iIPs.')');
+			        $oPage->p(MetaModel::GetClassIcon('IPAddress').'&nbsp;'.Dict::S('Class:VLAN/Tab:ipaddresses_list+'));
+			        $oBlock = new DisplayBlock($oLnkSet->GetFilter(), 'list', false);
+			        $oBlock->Display($oPage, 'ipint_to_ipadd', array('menu' => false, 'view_link' => false));
+		        } else {
+			        $oPage->SetCurrentTab(Dict::S('Class:VLAN/Tab:ipaddresses_list'));
+			        $oPage->p(MetaModel::GetClassIcon('IPAddress').'&nbsp;'.Dict::S('UI:NoObjectToDisplay'));
+		        }
+	        }
+		}
+	}
+
+	/**
+	 * @inheritdoc
+	 */
+	public function OnFormSubmit($oObject, $sFormPrefix = '') {
+	}
+
+	/**
+	 * @inheritdoc
+	 */
+	public function OnFormCancel($sTempId) {
+	}
+
+	/**
+	 * @inheritdoc
+	 */
+	public function EnumUsedAttributes($oObject) {
+		// Not yet implemented
+		return array();
+	}
+
+	/**
+	 * @inheritdoc
+	 */
+	public function GetIcon($oObject) {
+		// Not yet implemented
+		return '';
+	}
+
+	/**
+	 * @inheritdoc
+	 */
+	public function GetHilightClass($oObject) {
+		return HILIGHT_CLASS_NONE;
+	}
+
+	/**
+	 * @inheritdoc
+	 */
+	public function EnumAllowedActions(DBObjectSet $oSet) {
+		return array();
+	}
+
+	/**
+	 * @inheritdoc
+	 */
+	public function OnIsModified($oObject) {
+	}
+
+	/**
+	 * @inheritdoc
+	 */
+	public function OnCheckToWrite($oObject) {
+	}
+
+	/**
+	 * @inheritdoc
+	 */
+	public function OnCheckToDelete($oObject) {
+	}
+
+	/**
+	 * @inheritdoc
+	 */
+	public function OnDBUpdate($oObject, $oChange = null) {
+		if ($oObject instanceof FunctionalCI) {
+			// Check if $oObject has IP Attributes
+			$sCiClass = get_class($oObject);
+			$aIPsOfClass = IPAddress::GetListOfIPAttributes($sCiClass);
+			if (empty($aIPsOfClass)) {
+				return;
+			}
+
+			// Check if these or name have changed
+			$aListChanges = $oObject->ListPreviousValuesForUpdatedAttributes();
+			$aIPAttributes = array_merge($aIPsOfClass['IPAddress'], $aIPsOfClass['IPv4Address'], $aIPsOfClass['IPv6Address']);
+			$iOrgId = $oObject->Get('org_id');
+			foreach ($aIPAttributes AS $key => $sIPAttribute) {
+				$iIPId = $oObject->Get($sIPAttribute);
+
+				// Change IPs status if IP has changed
+				if (array_key_exists($sIPAttribute, $aListChanges)) {
+					$iPreviousIPId = $aListChanges[$sIPAttribute];
+					IPAddress::SetStatusOnAttachment($iIPId, $iPreviousIPId);
+				}
+
+				// Change IPs name if name has changed or IP has changed
+				if (array_key_exists($sIPAttribute, $aListChanges) || array_key_exists('name', $aListChanges)) {
+					$iPreviousIPId = $aListChanges[$sIPAttribute];
+					$sName = $oObject->GetNameForIPAttribute($sIPAttribute);
+					IPAddress::SetShortNameOnAttachment($iOrgId, $sName, $iIPId, $iPreviousIPId);
+				}
+			}
+
+			return;
+		}
+	}
+
+	/**
+	 * @inheritdoc
+	 */
+	public function OnDBInsert($oObject, $oChange = null) {
+		if ($oObject instanceof FunctionalCI) {
+			// Check if $oObject has IP Attributes
+			$sCiClass = get_class($oObject);
+			$aIPsOfClass = IPAddress::GetListOfIPAttributes($sCiClass);
+			if (empty($aIPsOfClass)) {
+				return;
+			}
+
+			// Check if these or name are set
+			$aIPAttributes = array_merge($aIPsOfClass['IPAddress'], $aIPsOfClass['IPv4Address'], $aIPsOfClass['IPv6Address']);
+			$iOrgId = $oObject->Get('org_id');
+			foreach ($aIPAttributes AS $key => $sIPAttribute) {
+				$iIPId = $oObject->Get($sIPAttribute);
+				$sName = $oObject->GetNameForIPAttribute($sIPAttribute);
+				if ($iIPId != 0) {
+					IPAddress::SetStatusOnAttachment($iIPId);
+					IPAddress::SetShortNameOnAttachment($iOrgId, $sName ,$iIPId);
+				}
+			}
+
+			return;
+		}
+	}
+
+	/**
+	 * @inheritdoc
+	 */
+	public function OnDBDelete($oObject, $oChange = null)
+	{
+		if ($oObject instanceof FunctionalCI) {
+			// Check if $oObject has IP Attributes
+			$sCiClass = get_class($oObject);
+			$aIPsOfClass = IPAddress::GetListOfIPAttributes($sCiClass);
+			if (empty($aIPsOfClass)) {
+				return;
+			}
+
+			// Check if these or name are set
+			$aIPAttributes = array_merge($aIPsOfClass['IPAddress'], $aIPsOfClass['IPv4Address'], $aIPsOfClass['IPv6Address']);
+			foreach ($aIPAttributes AS $key => $sIPAttribute) {
+				$iIPId = $oObject->Get($sIPAttribute);
+				if ($iIPId != 0) {
+					IPAddress::SetStatusOnDetachment($iIPId);
+					IPAddress::SetShortNameOnDetachment($iIPId);
+				}
+			}
+
+			return;
+		} elseif ($oObject instanceof IPInterface) {
+			// Release all IPs attached to interface
+			$oIPsSet = $oObject->Get('ip_list');
+			while ($oIP = $oIPsSet->Fetch()) {
+				$iIPId = $oIP->GetKey();
+				IPAddress::SetStatusOnDetachment($iIPId);
+				IPAddress::SetShortNameOnDetachment($iIPId);
+			}
+		}
+	}
+
+}]]></content>
+    </snippet>
+  </snippets>
+</itop_design>
