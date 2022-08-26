@@ -1,0 +1,206 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<itop_design xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" version="1.7">
+  <classes>
+    <class id="StorageSystem" _delta="if_exists">
+      <presentation>
+        <details>
+          <items>
+            <item id="col:col1">
+              <rank>110</rank>
+              <items>
+                <item id="fieldset:Server:moreinfo">
+                  <rank>20</rank>
+                  <items>
+                    <item id="managementip" _delta="delete"/>
+                    <item id="managementip_id" _delta="define">
+                      <rank>25</rank>
+                    </item>
+                  </items>
+                </item>
+              </items>
+            </item>
+          </items>
+        </details>
+        <search>
+          <items>
+            <item id="managementip" _delta="delete"/>
+            <item id="managementip_id" _delta="define">
+              <rank>75</rank>
+            </item>
+          </items>
+        </search>
+      </presentation>
+    </class>
+    <class id="SANSwitch" _delta="if_exists">
+      <presentation>
+        <details>
+          <items>
+            <item id="col:col1">
+              <rank>100</rank>
+              <items>
+                <item id="fieldset:Server:moreinfo">
+                  <rank>20</rank>
+                  <items>
+                    <item id="managementip" _delta="delete"/>
+                    <item id="managementip_id" _delta="define">
+                      <rank>35</rank>
+                    </item>
+                  </items>
+                </item>
+              </items>
+            </item>
+          </items>
+        </details>
+        <search>
+          <items>
+            <item id="managementip" _delta="delete"/>
+            <item id="managementip_id" _delta="define">
+              <rank>75</rank>
+            </item>
+          </items>
+        </search>
+      </presentation>
+    </class>
+    <class id="TapeLibrary" _delta="if_exists">
+      <presentation>
+        <details>
+          <items>
+            <item id="col:col1">
+              <rank>100</rank>
+              <items>
+                <item id="fieldset:Server:moreinfo">
+                  <rank>20</rank>
+                  <items>
+                    <item id="managementip" _delta="delete"/>
+                    <item id="managementip_id" _delta="define">
+                      <rank>25</rank>
+                    </item>
+                  </items>
+                </item>
+              </items>
+            </item>
+          </items>
+        </details>
+        <search>
+          <items>
+            <item id="managementip" _delta="delete"/>
+            <item id="managementip_id" _delta="define">
+              <rank>75</rank>
+            </item>
+          </items>
+        </search>
+      </presentation>
+    </class>
+    <class id="NAS" _delta="if_exists">
+      <presentation>
+        <details>
+          <items>
+            <item id="col:col1">
+              <rank>100</rank>
+              <items>
+                <item id="fieldset:Server:moreinfo">
+                  <rank>20</rank>
+                  <items>
+                    <item id="managementip" _delta="delete"/>
+                    <item id="managementip_id" _delta="define">
+                      <rank>25</rank>
+                    </item>
+                  </items>
+                </item>
+              </items>
+            </item>
+          </items>
+        </details>
+        <search>
+          <items>
+            <item id="managementip" _delta="delete"/>
+            <item id="managementip_id" _delta="define">
+              <rank>75</rank>
+            </item>
+          </items>
+        </search>
+      </presentation>
+    </class>
+    <class id="FiberChannelInterface" _delta="if_exists">
+      <properties>
+        <obsolescence _delta="delete"/>
+      </properties>
+      <fields>
+        <field id="status" xsi:type="AttributeEnum" _delta="define">
+          <sql>status</sql>
+          <values>
+            <value id="active">active</value>
+            <value id="inactive">inactive</value>
+          </values>
+          <default_value>active</default_value>
+          <is_null_allowed>true</is_null_allowed>
+          <display_style>radio_horizontal</display_style>
+        </field>
+      </fields>
+      <presentation>
+        <details _delta="redefine">
+          <items>
+            <item id="col:col1">
+              <rank>10</rank>
+              <items>
+                <item id="fieldset:Class:NetworkInterface:baseinfo">
+                  <rank>10</rank>
+                  <items>
+                    <item id="name">
+                      <rank>10</rank>
+                    </item>
+                    <item id="status">
+                      <rank>20</rank>
+                    </item>
+                    <item id="datacenterdevice_id">
+                      <rank>30</rank>
+                    </item>
+                  </items>
+                </item>
+              </items>
+            </item>
+            <item id="col:col2">
+            <rank>20</rank>
+              <items>
+                <item id="fieldset:Class:NetworkInterface:moreinfo">
+                  <rank>10</rank>
+                  <items>
+                    <item id="speed">
+                      <rank>40</rank>
+                    </item>
+                    <item id="topology">
+                      <rank>50</rank>
+                    </item>
+                    <item id="wwn">
+                      <rank>60</rank>
+                    </item>
+                  </items>
+                  <rank>10</rank>
+                </item>
+              </items>
+            </item>
+          </items>
+        </details>
+        <list _delta="redefine">
+          <items>
+            <item id="name">
+              <rank>10</rank>
+            </item>
+            <item id="status">
+              <rank>20</rank>
+            </item>
+            <item id="datacenterdevice_id">
+              <rank>30</rank>
+            </item>
+            <item id="speed">
+              <rank>40</rank>
+            </item>
+            <item id="topology">
+              <rank>50</rank>
+            </item>
+          </items>
+        </list>
+      </presentation>
+    </class>
+  </classes>
+</itop_design>

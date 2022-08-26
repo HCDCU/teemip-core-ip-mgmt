@@ -1,0 +1,1630 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<itop_design xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" version="1.7">
+  <classes>
+    <class id="DNSObject" _delta="define">
+      <parent>cmdbAbstractObject</parent>
+      <php_parent>
+        <name>TeemIp\TeemIp\Extension\Framework\Model\_IPAbstractObject</name>
+      </php_parent>
+      <properties>
+        <category>bizmodel,ipmgmt,dnsmgmt</category>
+        <abstract>true</abstract>
+        <key_type>autoincrement</key_type>
+        <db_table>dnsobject</db_table>
+        <db_key_field>id</db_key_field>
+        <db_final_class_field>finalclass</db_final_class_field>
+        <naming>
+          <format>%1$s</format>
+          <attributes>
+            <attribute id="name"/>
+          </attributes>
+        </naming>
+        <icon/>
+        <reconciliation>
+          <attributes>
+            <attribute id="name"/>
+            <attribute id="org_id"/>
+            <attribute id="org_name"/>
+         </attributes>
+        </reconciliation>
+      </properties>
+      <fields>
+        <field id="org_id" xsi:type="AttributeExternalKey">
+          <sql>org_id</sql>
+          <target_class>Organization</target_class>
+          <is_null_allowed>false</is_null_allowed>
+          <on_target_delete>DEL_MANUAL</on_target_delete>
+          <jointype/>
+        </field>
+        <field id="org_name" xsi:type="AttributeExternalField">
+          <extkey_attcode>org_id</extkey_attcode>
+          <target_attcode>name</target_attcode>
+        </field>
+        <field id="name" xsi:type="AttributeDomainName">
+          <sql>name</sql>
+          <default_value/>
+          <is_null_allowed>false</is_null_allowed>
+        </field>
+        <field id="comment" xsi:type="AttributeString">
+          <sql>comment</sql>
+          <default_value/>
+          <is_null_allowed>true</is_null_allowed>
+        </field>
+      </fields>
+      <methods>
+        <method id="ComputeFqdn">
+          <static>true</static>
+          <access>public</access>
+          <type>Internal</type>
+          <code><![CDATA[ public static function ComputeFqdn($sName, $sZoneName)
+	{
+		// Note: $sZoneName attribute must be fully qualified
+
+		// Add dot
+		$sName .= substr($sName, -1) != '.' ? '.' : null;
+		// Add zone name
+		$l = strlen($sZoneName);
+		$sName .= substr_compare($sName, $sZoneName, -$l, $l) != 0 ? $sZoneName : null;
+
+		return $sName;
+	}]]></code>
+        </method>
+      </methods>
+      <presentation>
+        <default_search>
+          <items>
+            <item id="name">
+              <rank>10</rank>
+            </item>
+            <item id="org_id">
+              <rank>20</rank>
+            </item>
+          </items>
+        </default_search>
+      </presentation>
+    </class>
+    <class id="Domain" _delta="define">
+      <parent>DNSObject</parent>
+      <php_parent>
+        <name>TeemIp\TeemIp\Extension\NetworkManagement\Model\_Domain</name>
+        <file>src/Model/_Domain.php</file>
+      </php_parent>
+      <properties>
+        <category>bizmodel,searchable,dnsmgmt</category>
+        <abstract>false</abstract>
+        <key_type>autoincrement</key_type>
+        <db_table>domain</db_table>
+        <db_key_field>id</db_key_field>
+        <db_final_class_field/>
+        <naming>
+          <format>%1$s</format>
+          <attributes>
+            <attribute id="name"/>
+          </attributes>
+        </naming>
+        <icon>asset/img/domain.png</icon>
+        <reconciliation>
+          <attributes>
+            <attribute id="name"/>
+            <attribute id="org_id"/>
+            <attribute id="org_name"/>
+          </attributes>
+        </reconciliation>
+      </properties>
+      <fields>
+        <field id="parent_org_id" xsi:type="AttributeExternalKey">
+          <filter/>
+          <dependencies/>
+          <sql>parent_org_id</sql>
+          <target_class>Organization</target_class>
+          <is_null_allowed>true</is_null_allowed>
+          <on_target_delete>DEL_MANUAL</on_target_delete>
+          <jointype/>
+        </field>
+        <field id="parent_org_name" xsi:type="AttributeExternalField">
+          <extkey_attcode>parent_org_id</extkey_attcode>
+          <target_attcode>name</target_attcode>
+        </field>
+        <field id="parent_id" xsi:type="AttributeHierarchicalKey">
+          <dependencies>
+            <attribute id="org_id"/>
+          </dependencies>
+          <sql>parent_id</sql>
+          <is_null_allowed>true</is_null_allowed>
+          <on_target_delete>DEL_MOVEUP</on_target_delete>
+          <filter><![CDATA[SELECT Domain AS d WHERE d.org_id = :this->org_id]]></filter>
+          <default_value>null</default_value>
+        </field>
+        <field id="parent_name" xsi:type="AttributeExternalField">
+          <extkey_attcode>parent_id</extkey_attcode>
+          <target_attcode>name</target_attcode>
+        </field>
+        <field id="requestor_id" xsi:type="AttributeExternalKey">
+          <filter><![CDATA[SELECT Person AS p WHERE p.org_id = :this->org_id]]></filter>
+          <dependencies>
+            <attribute id="org_id"/>
+          </dependencies>
+          <sql>requestor_id</sql>
+          <target_class>Person</target_class>
+          <is_null_allowed>true</is_null_allowed>
+          <on_target_delete>DEL_MANUAL</on_target_delete>
+          <jointype/>
+        </field>
+        <field id="requestor_name" xsi:type="AttributeExternalField">
+          <extkey_attcode>requestor_id</extkey_attcode>
+          <target_attcode>name</target_attcode>
+        </field>
+        <field id="release_date" xsi:type="AttributeDateTime">
+          <sql>release_date</sql>
+          <default_value/>
+          <is_null_allowed>true</is_null_allowed>
+        </field>
+        <field id="registrar_id" xsi:type="AttributeExternalKey">
+          <sql>registrar_id</sql>
+          <target_class>Organization</target_class>
+          <is_null_allowed>true</is_null_allowed>
+          <on_target_delete>DEL_MANUAL</on_target_delete>
+        </field>
+        <field id="registrar_name" xsi:type="AttributeExternalField">
+          <extkey_attcode>registrar_id</extkey_attcode>
+          <target_attcode>name</target_attcode>
+        </field>
+        <field id="validity_start" xsi:type="AttributeDate">
+          <sql>validity_start</sql>
+          <default_value/>
+          <is_null_allowed>true</is_null_allowed>
+        </field>
+        <field id="validity_end" xsi:type="AttributeDate">
+          <sql>validity_end</sql>
+          <default_value/>
+          <is_null_allowed>true</is_null_allowed>
+        </field>
+        <field id="renewal" xsi:type="AttributeEnum">
+          <values>
+            <value>na</value>
+            <value>manual</value>
+            <value>automatic</value>
+          </values>
+          <sql>renewal</sql>
+          <default_value>na</default_value>
+          <is_null_allowed>false</is_null_allowed>
+        </field>
+      </fields>
+      <methods/>
+      <presentation>
+        <details>
+          <items>
+            <item id="col:col1">
+              <rank>10</rank>
+              <items>
+                <item id="fieldset:Class:Domain:baseinfo">
+                  <rank>10</rank>
+                  <items>
+		            <item id="org_id">
+        		      <rank>10</rank>
+		            </item>
+                    <item id="parent_org_id">
+                      <rank>15</rank>
+                    </item>
+        		    <item id="parent_id">
+		              <rank>20</rank>
+        		    </item>
+		            <item id="name">
+		              <rank>30</rank>
+		            </item>
+		            <item id="comment">
+		              <rank>40</rank>
+		            </item>
+		            <item id="requestor_id">
+		              <rank>50</rank>
+		            </item>
+		            <item id="release_date">
+		              <rank>60</rank>
+		            </item>
+                  </items>
+                </item>
+              </items>
+            </item>
+            <item id="col:col2">
+              <rank>60</rank>
+              <items>
+                <item id="fieldset:Class:Domain:admininfo">
+                  <rank>10</rank>
+                  <items>
+		            <item id="registrar_id">
+		              <rank>10</rank>
+		            </item>
+		            <item id="validity_start">
+		              <rank>20</rank>
+		            </item>
+		            <item id="validity_end">
+		              <rank>30</rank>
+		            </item>
+		            <item id="renewal">
+		              <rank>40</rank>
+		            </item>
+                  </items>
+                </item>
+              </items>
+            </item>
+          </items>
+        </details>
+        <default_search>
+          <items>
+            <item id="name">
+              <rank>10</rank>
+            </item>
+            <item id="registrar_id">
+              <rank>20</rank>
+             </item>
+            <item id="org_id">
+              <rank>30</rank>
+            </item>
+          </items>
+        </default_search>
+        <search>
+          <items>
+            <item id="name">
+              <rank>10</rank>
+            </item>
+            <item id="parent_id">
+              <rank>20</rank>
+            </item>
+            <item id="registrar_id">
+              <rank>30</rank>
+            </item>
+            <item id="validity_end">
+              <rank>40</rank>
+            </item>
+            <item id="renewal">
+              <rank>50</rank>
+            </item>
+            <item id="org_id">
+              <rank>60</rank>
+            </item>
+            <item id="requestor_id">
+              <rank>70</rank>
+            </item>
+            <item id="release_date">
+              <rank>80</rank>
+            </item>
+          </items>
+        </search>
+        <list>
+          <items>
+            <item id="parent_id">
+              <rank>20</rank>
+            </item>
+            <item id="comment">
+              <rank>30</rank>
+            </item>
+            <item id="registrar_id">
+              <rank>40</rank>
+            </item>
+            <item id="org_id">
+              <rank>50</rank>
+            </item>
+            <item id="parent_org_id">
+              <rank>60</rank>
+            </item>
+          </items>
+        </list>
+      </presentation>
+    </class>
+    <class id="WANLink" _delta="define">
+      <parent>FunctionalCI</parent>
+      <properties>
+        <category>bizmodel,searchable,configmgmt</category>
+        <abstract>false</abstract>
+        <key_type>autoincrement</key_type>
+        <db_table>wanlink</db_table>
+        <db_key_field>id</db_key_field>
+        <db_final_class_field/>
+        <naming>
+          <format>%1$s</format>
+          <attributes>
+            <attribute id="name"/>
+          </attributes>
+        </naming>
+        <icon>asset/img/wanlink.png</icon>
+        <reconciliation>
+          <attributes>
+            <attribute id="name"/>
+            <attribute id="org_id"/>
+            <attribute id="organization_name"/>
+         </attributes>
+        </reconciliation>
+        <obsolescence>
+          <condition><![CDATA[status='obsolete']]></condition>
+        </obsolescence>
+      </properties>
+      <fields>
+        <field id="status" xsi:type="AttributeEnum">
+          <values>
+            <value>stock</value>
+            <value>implementation</value>
+            <value>production</value>
+            <value>obsolete</value>
+          </values>
+          <sql>status</sql>
+          <default_value>production</default_value>
+          <is_null_allowed>false</is_null_allowed>
+        </field>
+        <field id="location_id1" xsi:type="AttributeExternalKey">
+          <filter><![CDATA[SELECT Location AS l JOIN Organization AS child ON l.org_id = child.id JOIN Organization AS root ON child.parent_id BELOW root.id WHERE (root.id=:this->org_id OR root.id=:this->carrier_id)]]></filter>
+          <dependencies>
+            <attribute id="org_id"/>
+            <attribute id="carrier_id"/>
+          </dependencies>
+          <sql>location_id1</sql>
+          <target_class>Location</target_class>
+          <is_null_allowed>true</is_null_allowed>
+          <on_target_delete>DEL_MANUAL</on_target_delete>
+        </field>
+        <field id="location_name1" xsi:type="AttributeExternalField">
+          <extkey_attcode>location_id1</extkey_attcode>
+          <target_attcode>name</target_attcode>
+        </field>
+        <field id="location_id2" xsi:type="AttributeExternalKey">
+          <filter><![CDATA[SELECT Location AS l JOIN Organization AS child ON l.org_id = child.id JOIN Organization AS root ON child.parent_id BELOW root.id WHERE (root.id=:this->org_id OR root.id=:this->carrier_id)]]></filter>
+          <dependencies>
+            <attribute id="org_id"/>
+            <attribute id="carrier_id"/>
+          </dependencies>
+          <sql>location_id2</sql>
+          <target_class>Location</target_class>
+          <is_null_allowed>true</is_null_allowed>
+          <on_target_delete>DEL_MANUAL</on_target_delete>
+        </field>
+        <field id="location_name2" xsi:type="AttributeExternalField">
+          <extkey_attcode>location_id2</extkey_attcode>
+          <target_attcode>name</target_attcode>
+        </field>
+        <field id="type_id" xsi:type="AttributeExternalKey">
+          <filter><![CDATA[SELECT WANType]]></filter>
+          <dependencies/>
+          <sql>type_id</sql>
+          <target_class>WANType</target_class>
+          <is_null_allowed>true</is_null_allowed>
+          <on_target_delete>DEL_MANUAL</on_target_delete>
+          <jointype/>
+        </field>
+        <field id="type_name" xsi:type="AttributeExternalField">
+          <extkey_attcode>type_id</extkey_attcode>
+          <target_attcode>name</target_attcode>
+        </field>
+        <field id="rate" xsi:type="AttributeString">
+          <sql>rate</sql>
+          <default_value/>
+          <is_null_allowed>true</is_null_allowed>
+        </field>
+        <field id="burst_rate" xsi:type="AttributeString">
+          <sql>burst_rate</sql>
+          <default_value/>
+          <is_null_allowed>true</is_null_allowed>
+        </field>
+        <field id="underlying_rate" xsi:type="AttributeString">
+          <sql>underlying_rate</sql>
+          <default_value/>
+          <is_null_allowed>true</is_null_allowed>
+        </field>
+        <field id="networkinterface_id1" xsi:type="AttributeExternalKey">
+          <sql>networkinterface_id1</sql>
+          <target_class>NetworkInterface</target_class>
+          <is_null_allowed>true</is_null_allowed>
+          <on_target_delete>DEL_AUTO</on_target_delete>
+        </field>
+        <field id="networkinterface_name1" xsi:type="AttributeExternalField">
+          <extkey_attcode>networkinterface_id1</extkey_attcode>
+          <target_attcode>name</target_attcode>
+        </field>
+         <field id="networkinterface_id2" xsi:type="AttributeExternalKey">
+         <sql>networkinterface_id2</sql>
+          <target_class>NetworkInterface</target_class>
+          <is_null_allowed>true</is_null_allowed>
+          <on_target_delete>DEL_AUTO</on_target_delete>
+        </field>
+        <field id="networkinterface_name2" xsi:type="AttributeExternalField">
+          <extkey_attcode>networkinterface_id2</extkey_attcode>
+          <target_attcode>name</target_attcode>
+        </field>
+        <field id="carrier_id" xsi:type="AttributeExternalKey">
+          <sql>carrier_id</sql>
+          <target_class>Organization</target_class>
+          <is_null_allowed>true</is_null_allowed>
+          <on_target_delete>DEL_MANUAL</on_target_delete>
+        </field>
+        <field id="carrier_name" xsi:type="AttributeExternalField">
+          <extkey_attcode>carrier_id</extkey_attcode>
+          <target_attcode>name</target_attcode>
+        </field>
+        <field id="carrier_reference" xsi:type="AttributeString">
+          <sql>carrier_ref</sql>
+          <default_value/>
+          <is_null_allowed>true</is_null_allowed>
+        </field>
+        <field id="internal_reference" xsi:type="AttributeString">
+          <sql>internal_reference</sql>
+          <default_value/>
+          <is_null_allowed>true</is_null_allowed>
+        </field>
+        <field id="purchase_date" xsi:type="AttributeDate">
+          <sql>purchase_date</sql>
+          <default_value/>
+          <is_null_allowed>true</is_null_allowed>
+        </field>
+         <field id="renewal_date" xsi:type="AttributeDate">
+          <sql>renewal_date</sql>
+          <default_value/>
+          <is_null_allowed>true</is_null_allowed>
+        </field>
+         <field id="decommissioning_date" xsi:type="AttributeDate">
+          <sql>decommissioning_date</sql>
+          <default_value/>
+          <is_null_allowed>true</is_null_allowed>
+        </field>
+     </fields>
+      <methods/>
+      <presentation>
+        <details>
+		  <items>
+            <item id="col:col1">
+              <rank>10</rank>
+              <items>
+                <item id="fieldset:Class:WANLink:baseinfo">
+                  <rank>10</rank>
+                  <items>
+		            <item id="name">
+		              <rank>10</rank>
+		            </item>
+		            <item id="org_id">
+        		      <rank>20</rank>
+		            </item>
+		            <item id="description">
+		              <rank>30</rank>
+		            </item>
+		            <item id="status">
+		              <rank>40</rank>
+		            </item>
+                  </items>
+                </item>
+                <item id="fieldset:Class:WANLink:admininfo">
+                  <rank>20</rank>
+                  <items>
+		            <item id="carrier_id">
+		              <rank>10</rank>
+		            </item>
+		            <item id="carrier_reference">
+		              <rank>20</rank>
+		            </item>
+		            <item id="internal_reference">
+		              <rank>30</rank>
+		            </item>
+                  </items>
+                </item>
+              </items>
+            </item>
+            <item id="col:col2">
+              <rank>20</rank>
+              <items>
+                 <item id="fieldset:Class:WANLink:locationinfo">
+                  <rank>10</rank>
+                  <items>
+		            <item id="location_id1">
+		              <rank>10</rank>
+		            </item>
+		            <item id="location_id2">
+		              <rank>20</rank>
+		            </item>
+                  </items>
+                </item>
+                <item id="fieldset:Class:WANLink:networkinfo">
+                  <rank>20</rank>
+                  <items>
+		            <item id="type_id">
+		              <rank>10</rank>
+		            </item>
+		            <item id="rate">
+		              <rank>20</rank>
+		            </item>
+		            <item id="burst_rate">
+		              <rank>30</rank>
+		            </item>
+		            <item id="underlying_rate">
+		              <rank>40</rank>
+		            </item>
+		            <item id="networkinterface_id1">
+		              <rank>50</rank>
+		            </item>
+		            <item id="networkinterface_id2">
+		              <rank>60</rank>
+		            </item>
+                  </items>
+                </item>
+              </items>
+            </item>
+            <item id="col:col3">
+              <rank>10</rank>
+              <items>
+                <item id="fieldset:Class:WANLink:dateinfo">
+                  <rank>30</rank>
+                  <items>
+		            <item id="purchase_date">
+		              <rank>30</rank>
+		            </item>
+		            <item id="move2production">
+		              <rank>40</rank>
+		            </item>
+		            <item id="renewal_date">
+		              <rank>50</rank>
+		            </item>
+		            <item id="decommissioning_date">
+		              <rank>60</rank>
+		            </item>
+                  </items>
+                </item>
+              </items>
+            </item>
+		    <item id="contacts_list">
+		      <rank>30</rank>
+		    </item>
+		    <item id="documents_list">
+		      <rank>40</rank>
+		    </item>
+            <item id="applicationsolution_list">
+              <rank>60</rank>
+            </item>
+		    <item id="providercontracts_list">
+		      <rank>70</rank>
+			</item>
+          </items>
+        </details>
+        <default_search>
+          <items>
+            <item id="name">
+              <rank>10</rank>
+            </item>
+            <item id="org_id">
+              <rank>20</rank>
+            </item>
+            <item id="status">
+              <rank>30</rank>
+            </item>
+            <item id="type_id">
+              <rank>40</rank>
+            </item>
+            <item id="rate">
+              <rank>50</rank>
+            </item>
+            <item id="carrier_id">
+              <rank>60</rank>
+            </item>
+            <item id="renewal_date">
+              <rank>70</rank>
+            </item>
+          </items>
+        </default_search>
+        <search>
+          <items>
+            <item id="name">
+              <rank>10</rank>
+            </item>
+            <item id="org_id">
+              <rank>20</rank>
+            </item>
+            <item id="status">
+              <rank>30</rank>
+            </item>
+            <item id="type_id">
+              <rank>40</rank>
+            </item>
+            <item id="rate">
+              <rank>50</rank>
+            </item>
+            <item id="burst_rate">
+              <rank>60</rank>
+            </item>
+            <item id="underlying_rate">
+              <rank>70</rank>
+            </item>
+            <item id="carrier_id">
+              <rank>80</rank>
+            </item>
+            <item id="carrier_reference">
+              <rank>90</rank>
+            </item>
+            <item id="internal_reference">
+              <rank>100</rank>
+            </item>
+            <item id="purchase_date">
+              <rank>110</rank>
+            </item>
+            <item id="move2production">
+              <rank>120</rank>
+            </item>
+            <item id="renewal_date">
+              <rank>130</rank>
+            </item>
+            <item id="decommissioning_date">
+              <rank>140</rank>
+            </item>
+          </items>
+        </search>
+        <list>
+          <items>
+            <item id="status">
+              <rank>10</rank>
+            </item>
+            <item id="type_id">
+              <rank>20</rank>
+            </item>
+            <item id="rate">
+              <rank>30</rank>
+            </item>
+            <item id="location_id1">
+              <rank>40</rank>
+            </item>
+            <item id="location_id2">
+              <rank>50</rank>
+            </item>
+            <item id="carrier_id">
+              <rank>60</rank>
+            </item>
+            <item id="internal_reference">
+              <rank>70</rank>
+            </item>
+            <item id="networkinterface_id1">
+              <rank>80</rank>
+            </item>
+            <item id="networkinterface_id2">
+              <rank>90</rank>
+            </item>
+            <item id="org_id">
+              <rank>100</rank>
+            </item>
+          </items>
+        </list>
+      </presentation>
+    </class>
+    <class id="WANType" _delta="define">
+      <parent>Typology</parent>
+      <properties>
+        <category>bizmodel,searchable,configmgmt</category>
+        <abstract>false</abstract>
+        <key_type>autoincrement</key_type>
+        <db_table>wantype</db_table>
+        <db_key_field>id</db_key_field>
+        <db_final_class_field/>
+        <naming>
+          <format>%1$s</format>
+          <attributes>
+            <attribute id="name"/>
+          </attributes>
+        </naming>
+        <icon/>
+        <reconciliation>
+          <attributes>
+            <attribute id="name"/>
+          </attributes>
+        </reconciliation>
+      </properties>
+      <fields>
+        <field id="description" xsi:type="AttributeString">
+          <sql>description</sql>
+          <default_value/>
+          <is_null_allowed>true</is_null_allowed>
+        </field>
+      </fields>
+      <methods/>
+      <presentation>
+        <details>
+          <items>
+            <item id="name">
+              <rank>10</rank>
+            </item>
+            <item id="description">
+              <rank>20</rank>
+            </item>
+          </items>
+        </details>
+        <search>
+          <items>
+            <item id="name">
+              <rank>10</rank>
+            </item>
+            <item id="description">
+              <rank>20</rank>
+            </item>
+          </items>
+        </search>
+        <list>
+          <items>
+            <item id="name">
+              <rank>10</rank>
+            </item>
+            <item id="description">
+              <rank>20</rank>
+            </item>
+          </items>
+        </list>
+      </presentation>
+    </class>
+    <class id="ASNumber" _delta="define">
+      <parent>FunctionalCI</parent>
+      <properties>
+        <category>bizmodel,searchable,configmgmt</category>
+        <abstract>false</abstract>
+        <key_type>autoincrement</key_type>
+        <db_table>asnumber</db_table>
+        <db_key_field>id</db_key_field>
+        <db_final_class_field/>
+        <naming>
+          <format>%1$s</format>
+          <attributes>
+            <attribute id="name"/>
+          </attributes>
+        </naming>
+        <icon>asset/img/asnumber.png</icon>
+        <reconciliation>
+          <attributes>
+            <attribute id="name"/>
+            <attribute id="org_id"/>
+            <attribute id="organization_name"/>
+         </attributes>
+        </reconciliation>
+      </properties>
+      <fields>
+        <field id="number" xsi:type="AttributeDecimal">               
+          <sql>number</sql>
+          <default_value/>
+          <is_null_allowed>true</is_null_allowed>
+          <digits>10</digits>
+          <decimals>0</decimals>
+        </field>
+        <field id="registrar_id" xsi:type="AttributeExternalKey">
+          <sql>registrar_id</sql>
+          <target_class>Organization</target_class>
+          <is_null_allowed>true</is_null_allowed>
+          <on_target_delete>DEL_MANUAL</on_target_delete>
+        </field>
+        <field id="registrar_name" xsi:type="AttributeExternalField">
+          <extkey_attcode>registrar_id</extkey_attcode>
+          <target_attcode>name</target_attcode>
+        </field>
+        <field id="whois" xsi:type="AttributeURL">
+          <sql>whois</sql>
+          <default_value/>
+          <is_null_allowed>true</is_null_allowed>
+        </field>
+        <field id="validity_end" xsi:type="AttributeDate">
+          <sql>validity_end</sql>
+          <default_value/>
+          <is_null_allowed>true</is_null_allowed>
+        </field>
+         <field id="renewal_date" xsi:type="AttributeDate">
+          <sql>renewal_date</sql>
+          <default_value/>
+          <is_null_allowed>true</is_null_allowed>
+        </field>
+     </fields>
+      <methods/>
+      <presentation>
+        <details>
+		  <items>
+            <item id="col:col1">
+              <rank>10</rank>
+              <items>
+                <item id="fieldset:Class:ASNumber:baseinfo">
+                  <rank>10</rank>
+                  <items>
+		            <item id="name">
+		              <rank>10</rank>
+		            </item>
+		            <item id="number">
+		              <rank>20</rank>
+		            </item>
+		            <item id="org_id">
+        		      <rank>30</rank>
+		            </item>
+		            <item id="description">
+		              <rank>40</rank>
+		            </item>
+                  </items>
+                </item>
+              </items>
+            </item>
+            <item id="col:col2">
+              <rank>20</rank>
+              <items>
+                <item id="fieldset:Class:ASNumber:admininfo">
+                  <rank>10</rank>
+                  <items>
+		            <item id="registrar_id">
+		              <rank>10</rank>
+		            </item>
+		            <item id="whois">
+		              <rank>20</rank>
+		            </item>
+		            <item id="move2production">
+		              <rank>30</rank>
+		            </item>
+		            <item id="validity_end">
+		              <rank>40</rank>
+		            </item>
+		            <item id="renewal_date">
+		              <rank>50</rank>
+		            </item>
+                  </items>
+                </item>
+              </items>
+            </item>
+		    <item id="contacts_list">
+		      <rank>30</rank>
+		    </item>
+		    <item id="documents_list">
+		      <rank>40</rank>
+		    </item>
+		    <item id="providercontracts_list">
+		      <rank>50</rank>
+		    </item>
+          </items>
+        </details>
+        <search>
+          <items>
+            <item id="name">
+              <rank>10</rank>
+            </item>
+            <item id="number">
+              <rank>20</rank>
+            </item>
+            <item id="org_id">
+              <rank>30</rank>
+            </item>
+            <item id="registrar_id">
+              <rank>40</rank>
+            </item>
+           <item id="move2production">
+              <rank>50</rank>
+            </item>
+            <item id="validity_end">
+              <rank>60</rank>
+            </item>
+            <item id="renewal_date">
+              <rank>70</rank>
+            </item>
+          </items>
+        </search>
+        <list>
+          <items>
+            <item id="number">
+              <rank>10</rank>
+            </item>
+            <item id="registrar_id">
+              <rank>20</rank>
+            </item>
+            <item id="validity_end">
+              <rank>30</rank>
+            </item>
+            <item id="org_id">
+              <rank>40</rank>
+            </item>
+          </items>
+        </list>
+      </presentation>
+    </class>
+    <class id="VRF" _delta="define">
+      <parent>FunctionalCI</parent>
+      <properties>
+        <category>bizmodel,searchable,configmgmt</category>
+        <abstract>false</abstract>
+        <key_type>autoincrement</key_type>
+        <db_table>vrf</db_table>
+        <db_key_field>id</db_key_field>
+        <db_final_class_field/>
+        <naming>
+          <format>%1$s</format>
+          <attributes>
+            <attribute id="name"/>
+          </attributes>
+        </naming>
+        <icon>asset/img/vrf.png</icon>
+        <reconciliation>
+          <attributes>
+            <attribute id="name"/>
+            <attribute id="org_id"/>
+            <attribute id="organization_name"/>
+          </attributes>
+        </reconciliation>
+      </properties>
+      <fields>
+        <field id="route_dist" xsi:type="AttributeString">
+          <sql>route_dist</sql>
+          <default_value/>
+          <is_null_allowed>true</is_null_allowed>
+        </field>
+        <field id="route_trgt" xsi:type="AttributeString">
+          <sql>route_trgt</sql>
+          <default_value/>
+          <is_null_allowed>true</is_null_allowed>
+        </field>
+        <field id="subnets_list" xsi:type="AttributeLinkedSetIndirect">
+          <linked_class>lnkIPSubnetToVRF</linked_class>
+          <ext_key_to_me>vrf_id</ext_key_to_me>
+          <count_min>0</count_min>
+          <count_max>0</count_max>
+          <ext_key_to_remote>ipsubnet_id</ext_key_to_remote>
+          <duplicates/>
+        </field>
+        <field id="physicalinterfaces_list" xsi:type="AttributeLinkedSetIndirect">
+          <linked_class>lnkPhysicalInterfaceToVRF</linked_class>
+          <ext_key_to_me>vrf_id</ext_key_to_me>
+          <count_min>0</count_min>
+          <count_max>0</count_max>
+          <ext_key_to_remote>physicalinterface_id</ext_key_to_remote>
+          <duplicates/>
+        </field>
+        <field id="networkdevicevirtualinterfaces_list" xsi:type="AttributeLinkedSetIndirect">
+          <linked_class>lnkNetworkDeviceVirtualInterfaceToVRF</linked_class>
+          <ext_key_to_me>vrf_id</ext_key_to_me>
+          <count_min>0</count_min>
+          <count_max>0</count_max>
+          <ext_key_to_remote>networkdevicevirtualinterface_id</ext_key_to_remote>
+          <duplicates/>
+        </field>
+      </fields>
+      <methods>
+        <method id="DisplayBareRelations">
+        <comment/>
+        <static>false</static>
+        <access>public</access>
+        <type>Overload-DBObject</type>
+        <code><![CDATA[	public function DisplayBareRelations(WebPage $oP, $bEditMode = false)
+    {
+		parent::DisplayBareRelations($oP, $bEditMode);
+
+        if (! $bEditMode)
+        {
+            $iVRFId = $this->GetKey();
+
+            $sOQL = "SELECT lnkIPInterfaceToIPAddress AS l1 JOIN IPInterface AS int ON l1.ipinterface_id = int.id JOIN lnkPhysicalInterfaceToVRF AS l2 ON l2.physicalinterface_id = int.id JOIN VRF AS v ON l2.vrf_id = v.id WHERE v.id = :vrf_id";
+            if(class_exists('LogicalInterface'))
+            {
+                $sOQL .= " UNION SELECT lnkIPInterfaceToIPAddress AS l1 JOIN IPInterface AS int ON l1.ipinterface_id = int.id JOIN lnkLogicalInterfaceToVRF AS l2 ON l2.logicalinterface_id = int.id JOIN VRF AS v ON l2.vrf_id = v.id WHERE v.id = :vrf_id";
+            }
+	        $oLnkSet =  new CMDBObjectSet(DBObjectSearch::FromOQL($sOQL), array(), array('vrf_id' => $iVRFId));
+			$iLnkSet = $oLnkSet->Count();
+
+		    if ($iLnkSet > 0)
+	        {
+		        $iIPs = $oLnkSet->Count();
+		        $oP->SetCurrentTab(Dict::S('Class:VRF/Tab:ipaddresses_list').' ('.$iIPs.')');
+		        $oP->p(MetaModel::GetClassIcon('IPAddress').'&nbsp;'.Dict::S('Class:VRF/Tab:ipaddresses_list+'));
+		        $oBlock = new DisplayBlock($oLnkSet->GetFilter(), 'list', false);
+		        $oBlock->Display($oP, 'ipint_to_ipadd', array('menu' => false, 'view_link' => false));
+	        }
+        }
+	}]]></code>
+      </method>
+      </methods>
+      <presentation>
+        <details>
+          <items>
+            <item id="col:col1">
+              <rank>10</rank>
+              <items>
+                <item id="fieldset:Class:VRF:baseinfo">
+                <rank>10</rank>
+                  <items>
+                    <item id="org_id">
+                      <rank>10</rank>
+                    </item>
+                    <item id="name">
+                      <rank>20</rank>
+                    </item>
+                    <item id="description">
+                      <rank>30</rank>
+                    </item>
+                    <item id="route_dist">
+                      <rank>40</rank>
+                    </item>
+                    <item id="route_trgt">
+                      <rank>50</rank>
+                    </item>
+                  </items>
+                </item>
+              </items>
+            </item>
+            <item id="subnets_list">
+              <rank>20</rank>
+            </item>
+            <item id="physicalinterfaces_list">
+              <rank>30</rank>
+            </item>
+            <item id="networkdevicevirtualinterfaces_list">
+              <rank>70</rank>
+            </item>
+          </items>
+        </details>
+        <search>
+          <items>
+            <item id="name">
+              <rank>10</rank>
+            </item>
+            <item id="org_id">
+              <rank>20</rank>
+            </item>
+            <item id="route_dist">
+              <rank>30</rank>
+            </item>
+            <item id="route_trgt">
+              <rank>40</rank>
+            </item>
+          </items>
+        </search>
+        <list>
+          <items>
+            <item id="name">
+              <rank>10</rank>
+            </item>
+            <item id="route_dist">
+              <rank>20</rank>
+            </item>
+            <item id="route_trgt">
+              <rank>30</rank>
+            </item>
+            <item id="org_id">
+              <rank>40</rank>
+            </item>
+          </items>
+        </list>
+      </presentation>
+    </class>
+    <class id="lnkPhysicalInterfaceToVRF" _delta="define">
+      <parent>cmdbAbstractObject</parent>
+      <properties>
+        <is_link>1</is_link>
+        <category>bizmodel</category>
+        <abstract>false</abstract>
+        <key_type>autoincrement</key_type>
+        <db_table>lnkphysicalinterfacetovrf</db_table>
+        <db_key_field>id</db_key_field>
+        <db_final_class_field/>
+        <naming>
+          <format>%1$s %2$s</format>
+          <attributes>
+            <attribute id="physicalinterface_id"/>
+            <attribute id="vrf_id"/>
+          </attributes>
+        </naming>
+        <icon/>
+        <reconciliation>
+          <attributes>
+            <attribute id="physicalinterface_id"/>
+            <attribute id="vrf_id"/>
+          </attributes>
+        </reconciliation>
+      </properties>
+      <fields>
+        <field id="physicalinterface_id" xsi:type="AttributeExternalKey">
+          <sql>physicalinterface_id</sql>
+          <target_class>PhysicalInterface</target_class>
+          <is_null_allowed>false</is_null_allowed>
+          <on_target_delete>DEL_AUTO</on_target_delete>
+        </field>
+        <field id="physicalinterface_name" xsi:type="AttributeExternalField">
+          <extkey_attcode>physicalinterface_id</extkey_attcode>
+          <target_attcode>name</target_attcode>
+        </field>
+        <field id="physicalinterface_device_id" xsi:type="AttributeExternalField">
+          <extkey_attcode>physicalinterface_id</extkey_attcode>
+          <target_attcode>connectableci_id</target_attcode>
+        </field>
+        <field id="physicalinterface_device_name" xsi:type="AttributeExternalField">
+          <extkey_attcode>physicalinterface_id</extkey_attcode>
+          <target_attcode>connectableci_name</target_attcode>
+        </field>
+        <field id="vrf_id" xsi:type="AttributeExternalKey">
+          <sql>vrf_id</sql>
+          <target_class>VRF</target_class>
+          <is_null_allowed>false</is_null_allowed>
+          <on_target_delete>DEL_AUTO</on_target_delete>
+        </field>
+        <field id="name" xsi:type="AttributeExternalField">
+          <extkey_attcode>vrf_id</extkey_attcode>
+          <target_attcode>name</target_attcode>
+        </field>
+      </fields>
+      <methods/>
+      <presentation>
+        <details>
+          <items>
+            <item id="physicalinterface_id">
+              <rank>10</rank>
+            </item>
+            <item id="vrf_id">
+              <rank>20</rank>
+            </item>
+          </items>
+        </details>
+        <search>
+          <items>
+            <item id="physicalinterface_id">
+              <rank>10</rank>
+            </item>
+            <item id="vrf_id">
+              <rank>20</rank>
+            </item>
+          </items>
+        </search>
+        <list>
+          <items>
+            <item id="physicalinterface_id">
+              <rank>10</rank>
+            </item>
+            <item id="vrf_id">
+              <rank>20</rank>
+            </item>
+          </items>
+        </list>
+      </presentation>
+    </class>
+    <class id="NetworkDeviceVirtualInterface" _delta="define">
+      <parent>IPInterface</parent>
+      <properties>
+        <category>bizmodel,searchable</category>
+        <abstract>false</abstract>
+        <key_type>autoincrement</key_type>
+        <db_table>networkdevicevirtualinterface</db_table>
+        <db_key_field>id</db_key_field>
+        <db_final_class_field/>
+        <naming>
+          <attributes>
+            <attribute id="name"/>
+            <attribute id="networkdevice_name"/>
+          </attributes>
+        </naming>
+        <icon>asset/img/ndvi.png</icon>
+        <reconciliation>
+          <attributes>
+            <attribute id="name"/>
+            <attribute id="networkdevice_id"/>
+            <attribute id="networkdevice_name"/>
+          </attributes>
+        </reconciliation>
+        <obsolescence>
+          <condition>networkdevice_id_obsolescence_flag</condition>
+        </obsolescence>
+      </properties>
+      <fields>
+        <field id="networkdevice_id" xsi:type="AttributeExternalKey">
+          <sql>networkdevice_id</sql>
+          <target_class>NetworkDevice</target_class>
+          <is_null_allowed>false</is_null_allowed>
+          <on_target_delete>DEL_AUTO</on_target_delete>
+        </field>
+        <field id="networkdevice_name" xsi:type="AttributeExternalField">
+          <extkey_attcode>networkdevice_id</extkey_attcode>
+          <target_attcode>name</target_attcode>
+        </field>
+        <field id="vlans_list" xsi:type="AttributeLinkedSetIndirect" _delta="define">
+          <linked_class>lnkNetworkDeviceVirtualInterfaceToVLAN</linked_class>
+          <ext_key_to_me>networkdevicevirtualinterface_id</ext_key_to_me>
+          <count_min>0</count_min>
+          <count_max>0</count_max>
+          <ext_key_to_remote>vlan_id</ext_key_to_remote>
+          <duplicates/>
+        </field>
+        <field id="vrfs_list" xsi:type="AttributeLinkedSetIndirect" _delta="define">
+          <linked_class>lnkNetworkDeviceVirtualInterfaceToVRF</linked_class>
+          <ext_key_to_me>networkdevicevirtualinterface_id</ext_key_to_me>
+          <count_min>0</count_min>
+          <count_max>0</count_max>
+          <ext_key_to_remote>vrf_id</ext_key_to_remote>
+          <duplicates/>
+        </field>
+        <field id="status" xsi:type="AttributeEnum">
+          <values>
+            <value>active</value>
+            <value>inactive</value>
+          </values>
+          <sql>status</sql>
+          <default_value>active</default_value>
+          <is_null_allowed>true</is_null_allowed>
+          <display_style>radio_horizontal</display_style>
+        </field>
+      </fields>
+      <methods/>
+      <presentation>
+        <details>
+          <items>
+            <item id="vlans_list">
+              <rank>10</rank>
+            </item>
+            <item id="vrfs_list">
+              <rank>20</rank>
+            </item>
+            <item id="ip_list">
+              <rank>30</rank>
+            </item>
+            <item id="col:col1">
+              <rank>40</rank>
+              <items>
+                <item id="fieldset:Class:NetworkInterface:baseinfo">
+                  <rank>10</rank>
+                  <items>
+                    <item id="name">
+                      <rank>10</rank>
+                    </item>
+                    <item id="status">
+                      <rank>20</rank>
+                    </item>
+                    <item id="networkdevice_id">
+                      <rank>30</rank>
+                    </item>
+                    <item id="comment">
+                      <rank>40</rank>
+                    </item>
+                  </items>
+                </item>
+              </items>
+            </item>
+            <item id="col:col2">
+              <rank>50</rank>
+              <items>
+                <item id="fieldset:Class:NetworkInterface:moreinfo">
+                  <rank>10</rank>
+                  <items>
+                    <item id="macaddress">
+                      <rank>10</rank>
+                    </item>
+                    <item id="speed">
+                      <rank>20</rank>
+                    </item>
+                  </items>
+                </item>
+              </items>
+            </item>
+          </items>
+        </details>
+         <default_search>
+          <items>
+            <item id="name">
+              <rank>10</rank>
+            </item>
+            <item id="status">
+              <rank>20</rank>
+            </item>
+            <item id="macaddress">
+              <rank>30</rank>
+            </item>
+            <item id="networkdevice_id">
+              <rank>40</rank>
+            </item>
+          </items>
+        </default_search>
+        <list>
+          <items>
+            <item id="status">
+              <rank>10</rank>
+            </item>
+            <item id="macaddress">
+              <rank>20</rank>
+            </item>
+            <item id="comment">
+              <rank>30</rank>
+            </item>
+            <item id="speed">
+              <rank>40</rank>
+            </item>
+          </items>
+        </list>
+      </presentation>
+    </class>
+    <class id="lnkNetworkDeviceVirtualInterfaceToVLAN" _delta="define">
+      <parent>cmdbAbstractObject</parent>
+      <properties>
+        <is_link>1</is_link>
+        <category>bizmodel</category>
+        <abstract>false</abstract>
+        <key_type>autoincrement</key_type>
+        <db_table>lnknetworkdevicevirtualinterfacetovlan</db_table>
+        <db_key_field>id</db_key_field>
+        <db_final_class_field/>
+        <naming>
+          <format>%1$s %2$s</format>
+          <attributes>
+            <attribute id="networkdevicevirtualinterface_id"/>
+            <attribute id="vlan_id"/>
+          </attributes>
+        </naming>
+        <icon/>
+        <reconciliation>
+          <attributes>
+            <attribute id="networkdevicevirtualinterface_id"/>
+            <attribute id="vlan_id"/>
+          </attributes>
+        </reconciliation>
+      </properties>
+      <fields>
+        <field id="networkdevicevirtualinterface_id" xsi:type="AttributeExternalKey">
+          <sql>networkdevicevirtualinterface_id</sql>
+          <target_class>NetworkDeviceVirtualInterface</target_class>
+          <is_null_allowed>false</is_null_allowed>
+          <on_target_delete>DEL_AUTO</on_target_delete>
+        </field>
+        <field id="networkdevicevirtualinterface_name" xsi:type="AttributeExternalField">
+          <extkey_attcode>networkdevicevirtualinterface_id</extkey_attcode>
+          <target_attcode>name</target_attcode>
+        </field>
+        <field id="networkdevicevirtualinterface_device_id" xsi:type="AttributeExternalField">
+          <extkey_attcode>networkdevicevirtualinterface_id</extkey_attcode>
+          <target_attcode>networkdevice_id</target_attcode>
+        </field>
+        <field id="networkdevicevirtualinterface_device_name" xsi:type="AttributeExternalField">
+          <extkey_attcode>networkdevicevirtualinterface_id</extkey_attcode>
+          <target_attcode>networkdevice_name</target_attcode>
+        </field>
+        <field id="vlan_id" xsi:type="AttributeExternalKey">
+          <sql>vlan_id</sql>
+          <target_class>VLAN</target_class>
+          <is_null_allowed>false</is_null_allowed>
+          <on_target_delete>DEL_AUTO</on_target_delete>
+        </field>
+        <field id="vlan_tag" xsi:type="AttributeExternalField">
+          <extkey_attcode>vlan_id</extkey_attcode>
+          <target_attcode>vlan_tag</target_attcode>
+        </field>
+      </fields>
+      <methods/>
+      <presentation>
+        <details>
+          <items>
+            <item id="networkdevicevirtualinterface_id">
+              <rank>10</rank>
+            </item>
+            <item id="vlan_id">
+              <rank>20</rank>
+            </item>
+          </items>
+        </details>
+        <search>
+          <items>
+            <item id="networkdevicevirtualinterface_id">
+              <rank>10</rank>
+            </item>
+            <item id="vlan_id">
+              <rank>20</rank>
+            </item>
+          </items>
+        </search>
+        <list>
+          <items>
+            <item id="networkdevicevirtualinterface_id">
+              <rank>10</rank>
+            </item>
+            <item id="vlan_id">
+              <rank>20</rank>
+            </item>
+          </items>
+        </list>
+      </presentation>
+    </class>
+    <class id="lnkNetworkDeviceVirtualInterfaceToVRF" _delta="define">
+      <parent>cmdbAbstractObject</parent>
+      <properties>
+        <is_link>1</is_link>
+        <category>bizmodel</category>
+        <abstract>false</abstract>
+        <key_type>autoincrement</key_type>
+        <db_table>lnknetworkdevicevirtualinterfacetovrf</db_table>
+        <db_key_field>id</db_key_field>
+        <db_final_class_field/>
+        <naming>
+          <format>%1$s %2$s</format>
+          <attributes>
+            <attribute id="networkdevicevirtualinterface_id"/>
+            <attribute id="vrf_id"/>
+          </attributes>
+        </naming>
+        <icon/>
+        <reconciliation>
+          <attributes>
+            <attribute id="networkdevicevirtualinterface_id"/>
+            <attribute id="vrf_id"/>
+          </attributes>
+        </reconciliation>
+      </properties>
+      <fields>
+        <field id="networkdevicevirtualinterface_id" xsi:type="AttributeExternalKey">
+          <sql>networkdevicevirtualinterface_id</sql>
+          <target_class>NetworkDeviceVirtualInterface</target_class>
+          <is_null_allowed>false</is_null_allowed>
+          <on_target_delete>DEL_AUTO</on_target_delete>
+        </field>
+        <field id="networkdevicevirtualinterface_name" xsi:type="AttributeExternalField">
+          <extkey_attcode>networkdevicevirtualinterface_id</extkey_attcode>
+          <target_attcode>name</target_attcode>
+        </field>
+        <field id="networkdevicevirtualinterface_device_id" xsi:type="AttributeExternalField">
+          <extkey_attcode>networkdevicevirtualinterface_id</extkey_attcode>
+          <target_attcode>networkdevice_id</target_attcode>
+        </field>
+        <field id="physicalinterface_device_name" xsi:type="AttributeExternalField">
+          <extkey_attcode>networkdevicevirtualinterface_id</extkey_attcode>
+          <target_attcode>networkdevice_id</target_attcode>
+        </field>
+        <field id="vrf_id" xsi:type="AttributeExternalKey">
+          <sql>vrf_id</sql>
+          <target_class>VRF</target_class>
+          <is_null_allowed>false</is_null_allowed>
+          <on_target_delete>DEL_AUTO</on_target_delete>
+        </field>
+        <field id="vfr_name" xsi:type="AttributeExternalField">
+          <extkey_attcode>vrf_id</extkey_attcode>
+          <target_attcode>name</target_attcode>
+        </field>
+      </fields>
+      <methods/>
+      <presentation>
+        <details>
+          <items>
+            <item id="networkdevicevirtualinterface_id">
+              <rank>10</rank>
+            </item>
+            <item id="vrf_id">
+              <rank>20</rank>
+            </item>
+          </items>
+        </details>
+        <search>
+          <items>
+            <item id="networkdevicevirtualinterface_id">
+              <rank>10</rank>
+            </item>
+            <item id="vrf_id">
+              <rank>20</rank>
+            </item>
+          </items>
+        </search>
+        <list>
+          <items>
+            <item id="networkdevicevirtualinterface_id">
+              <rank>10</rank>
+            </item>
+            <item id="vrf_id">
+              <rank>20</rank>
+            </item>
+          </items>
+        </list>
+      </presentation>
+    </class>
+    <class id="NetworkDevice" _delta="must_exist">
+      <fields>
+        <field id="networkdevicevirtualinterfaces_list" xsi:type="AttributeLinkedSet" _delta="define">
+          <linked_class>NetworkDeviceVirtualInterface</linked_class>
+          <ext_key_to_me>networkdevice_id</ext_key_to_me>
+          <tracking_level/>
+          <edit_mode/>
+        </field>
+      </fields>
+      <presentation>
+        <details>
+          <items>
+            <item id="networkdevicevirtualinterfaces_list" _delta="define">
+              <rank>45</rank>
+            </item>
+          </items>
+        </details>
+      </presentation>
+    </class>
+    <class id="VLAN" _delta="must_exist">
+      <fields>
+        <field id="networkdevicevirtualinterfaces_list" xsi:type="AttributeLinkedSetIndirect" _delta="define">
+          <linked_class>lnkNetworkDeviceVirtualInterfaceToVLAN</linked_class>
+          <ext_key_to_me>vlan_id</ext_key_to_me>
+          <count_min>0</count_min>
+          <count_max>0</count_max>
+          <ext_key_to_remote>networkdevicevirtualinterface_id</ext_key_to_remote>
+          <duplicates/>
+        </field>
+      </fields>
+      <presentation>
+        <details>
+          <items>
+            <item id="networkdevicevirtualinterfaces_list" _delta="define">
+              <rank>70</rank>
+            </item>
+          </items>
+        </details>
+      </presentation>
+    </class>
+  </classes>
+  <menus>
+    <menu id="ConfigManagementOverview" xsi:type="DashboardMenuNode" _delta="if_exists">
+      <definition>
+        <cells>
+          <cell id="teemip-000" _delta="define">
+            <rank>3.5</rank>
+            <dashlets>
+              <dashlet id="teemip-001" xsi:type="DashletHeaderStatic">
+                <rank>0</rank>
+                <title>Menu:ConfigManagement:Network</title>
+                <icon>teemip-network-mgmt/asset/img/network.png</icon>
+              </dashlet>
+			  <dashlet id="teemip-011" xsi:type="DashletBadge">
+        		<rank>1</rank>
+          		<class>NetworkInterface</class>
+        	  </dashlet>
+    		  <dashlet id="teemip-012" xsi:type="DashletBadge">
+          		<rank>2</rank>
+          		<class>VLAN</class>
+        	  </dashlet>
+    		  <dashlet id="teemip-013" xsi:type="DashletBadge">
+          		<rank>3</rank>
+          		<class>WANLink</class>
+        	  </dashlet>
+              <dashlet id="teemip-014" xsi:type="DashletBadge">
+          		<rank>4</rank>
+          		<class>Domain</class>
+        	  </dashlet>
+    		  <dashlet id="teemip-015" xsi:type="DashletBadge">
+          		<rank>5</rank>
+          		<class>ASNumber</class>
+        	  </dashlet>
+    		  <dashlet id="teemip-016" xsi:type="DashletBadge">
+          		<rank>6</rank>
+          		<class>VRF</class>
+        	  </dashlet>
+		    </dashlets>
+          </cell>
+        </cells>
+      </definition>
+    </menu>
+	<menu id="Typology" xsi:type="DashboardMenuNode" _delta="if_exists">
+	  <definition>
+	     <cells>
+	      <cell id="0">
+	        <dashlets>
+	          <dashlet id="teemip-1003" xsi:type="DashletBadge" _delta="define">
+	            <rank>10.7</rank>
+	            <class>WANType</class>
+	          </dashlet>
+	        </dashlets>
+	      </cell>
+	    </cells>
+	  </definition>
+    </menu>
+  </menus>
+  <user_rights>
+    <groups>
+      <group id="Network" _delta="define">
+        <classes>
+          <class id="ASNumber"/>
+          <class id="Domain"/>
+          <class id="VLAN"/>
+          <class id="VRF"/>
+          <class id="WANLink"/>
+          <class id="WANType"/>
+        </classes>
+      </group>
+      <group id="DNSObject" _delta="define">
+        <classes>
+          <class id="DNSObject"/>
+        </classes>
+      </group>
+    </groups>
+    <profiles>
+      <profile id="3" _delta="must_exist">
+        <groups>
+          <group id="Network" _delta="define">
+            <actions>
+             <action id="action:write">allow</action>
+             <action id="action:bulk write">allow</action>
+             <action id="action:delete">allow</action>
+            </actions>
+          </group>
+        </groups>
+      </profile>
+    </profiles>
+  </user_rights>
+</itop_design>
